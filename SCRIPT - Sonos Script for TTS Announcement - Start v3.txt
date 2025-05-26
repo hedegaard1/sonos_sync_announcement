@@ -1,0 +1,174 @@
+alias: Sonos Script for TTS Announcement - Start v3
+description: >-
+  Complete Sonos announcement workflow with 13 automated steps. Takes snapshot,
+  groups speakers, plays MP3, and waits for completion. Perfect for appliance
+  notifications! For detailed documentation and step-by-step guide, visit your
+  Home Assistant at:
+  http://192.168.10.60:8123/local/documentation/sonos_announcement_guide.html
+fields:
+  group_leader:
+    name: 🎯 Group Leader
+    description: >
+      Main speaker that will lead the group and play the MP3. This speaker
+      becomes the master for the announcement group.
+    required: true
+    selector:
+      entity:
+        domain: media_player
+        integration: sonos
+  group_members:
+    name: 👥 Group Members
+    description: >
+      Additional speakers to include in the group (select one or more). All
+      selected speakers will play the announcement simultaneously in perfect
+      sync.
+    required: true
+    selector:
+      entity:
+        domain: media_player
+        multiple: true
+        integration: sonos
+  delay_after_snapshot:
+    name: ⏱️ Step 2 - Delay after Snapshot
+    description: >
+      Time to wait after taking snapshot before pausing speakers. Default 1.5s
+      works well for most setups.
+    required: true
+    default: 1.5
+    selector:
+      number:
+        min: 0.5
+        max: 5
+        step: 0.1
+        unit_of_measurement: seconds
+  delay_after_pause:
+    name: ⏱️ Step 4 - Delay after Pause
+    description: >
+      Time to wait after pausing before ungrouping speakers. Increase if you
+      experience grouping issues.
+    required: true
+    default: 1
+    selector:
+      number:
+        min: 0.5
+        max: 5
+        step: 0.1
+        unit_of_measurement: seconds
+  delay_after_unjoin:
+    name: ⏱️ Step 6 - Delay after Unjoin
+    description: >
+      Time to wait after ungrouping before creating new group. Critical for
+      stable grouping - don't set below 1.0s.
+    required: true
+    default: 1.5
+    selector:
+      number:
+        min: 0.5
+        max: 5
+        step: 0.1
+        unit_of_measurement: seconds
+  delay_after_join:
+    name: ⏱️ Step 8 - Delay after Join
+    description: >
+      Time to wait after grouping before setting volume. Ensures all speakers
+      are ready before volume adjustment.
+    required: true
+    default: 1.5
+    selector:
+      number:
+        min: 0.5
+        max: 5
+        step: 0.1
+        unit_of_measurement: seconds
+  volume:
+    name: 🔊 Step 9 - Set Volume
+    description: >
+      Volume level for announcement (0.0 = muted, 1.0 = maximum). Recommended:
+      0.3 for normal announcements, 0.5 for important alerts.
+    required: true
+    default: 0.3
+    selector:
+      number:
+        min: 0
+        max: 1
+        step: 0.01
+  final_delay:
+    name: ⏱️ Step 10 - Final Delay
+    description: >
+      Time to wait after setup is complete before MP3 playback starts. Final
+      buffer to ensure perfect synchronization.
+    required: true
+    default: 1
+    selector:
+      number:
+        min: 0
+        max: 3
+        step: 0.1
+        unit_of_measurement: seconds
+  mp3_url:
+    name: 🎵 Step 11 - MP3 File URL/Path
+    description: >
+      Enter the full URL or path to the MP3 file you want to play. Examples:
+      http://192.168.1.100:8123/local/your_announcement.mp3 or
+      /local/your_announcement.mp3 The file should be placed in the www folder
+      of your Home Assistant configuration. Need a custom MP3? Generate
+      high-quality announcements at https://fliki.ai/voices
+    required: true
+    default: http://192.168.10.60:8123/local/vaskemaskinen_er_faerdig.mp3
+    selector:
+      text: null
+  mp3_duration:
+    name: ⏰ Step 12 - Wait for MP3 Completion
+    description: >
+      Length of your MP3 file plus 1 second buffer to ensure complete playback.
+      Set this to your MP3 duration + 1 second so the announcement finishes
+      completely before restore. Examples: 3s for 2-second files, 6s for
+      5-second files, 11s for 10-second files.
+    required: true
+    default: 3
+    selector:
+      number:
+        min: 1
+        max: 30
+        step: 0.5
+        unit_of_measurement: seconds
+variables:
+  all_sonos: >
+    {{ expand(integration_entities('sonos')) | selectattr('domain', 'equalto',
+    'media_player') | map(attribute='entity_id') | list }}
+  speaker_list: |
+    {{ ([group_leader] + group_members) | unique | list }}
+sequence:
+  - action: sonos.snapshot
+    data:
+      entity_id: "{{ all_sonos }}"
+      with_group: true
+  - delay: 00:00:{{ delay_after_snapshot | float }}
+  - action: media_player.media_pause
+    target:
+      entity_id: "{{ group_members }}"
+  - delay: 00:00:{{ delay_after_pause | float }}
+  - action: media_player.unjoin
+    data:
+      entity_id: "{{ all_sonos }}"
+  - delay: 00:00:{{ delay_after_unjoin | float }}
+  - action: media_player.join
+    data:
+      group_members: "{{ group_members }}"
+    target:
+      entity_id: "{{ group_leader }}"
+  - delay: 00:00:{{ delay_after_join | float }}
+  - action: media_player.volume_set
+    data:
+      volume_level: "{{ volume }}"
+    target:
+      entity_id: "{{ speaker_list }}"
+  - delay: 00:00:{{ final_delay | float }}
+  - action: media_player.play_media
+    data:
+      media_content_id: "{{ mp3_url }}"
+      media_content_type: music
+    target:
+      entity_id: "{{ group_leader }}"
+  - delay: 00:00:{{ mp3_duration | float }}
+mode: single

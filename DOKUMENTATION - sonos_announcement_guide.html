@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Sonos Announcement Script Documentation</title>
+  <style>
+    body {
+      background-color: #fbfbfb;
+      font-family: "Segoe UI", Roboto, sans-serif;
+      color: #222222;
+      padding: 2rem;
+      max-width: 1100px;
+      margin: auto;
+    }
+    h1 {
+      color: #70b9ee;
+      font-size: 2.4rem;
+      font-weight: bold;
+      margin-bottom: 1rem;
+    }
+    h2 {
+      color: #487fa8;
+      font-size: 1.8rem;
+      margin-top: 2rem;
+      margin-bottom: 0.5rem;
+    }
+    details {
+      background: #ffffff;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 1rem;
+      margin: 1rem 0;
+    }
+    summary {
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 1.1rem;
+    }
+    pre {
+      background: #f0f0f0;
+      padding: 1.2rem;
+      border-radius: 6px;
+      overflow-x: auto;
+      font-family: monospace;
+      font-size: 0.95rem;
+      border-left: 4px solid #cfd8dc;
+      margin-top: 1rem;
+      white-space: pre-wrap;
+    }
+    code {
+      background: #e3f2fd;
+      padding: 0.15rem 0.4rem;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 0.95rem;
+    }
+    ul {
+      padding-left: 1.5rem;
+    }
+    li {
+      margin-bottom: 0.5rem;
+    }
+    p {
+      margin: 1rem 0;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #ccc;
+      margin: 2rem 0;
+    }
+    .step-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1rem;
+      margin: 1rem 0;
+    }
+    .step-card {
+      background: #ffffff;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 1rem;
+      border-left: 4px solid #70b9ee;
+    }
+    .step-number {
+      font-weight: bold;
+      color: #487fa8;
+      font-size: 1.1rem;
+    }
+    .adjustable {
+      background: #fff3e0;
+      border-left-color: #ff9800;
+    }
+    .automatic {
+      background: #f3e5f5;
+      border-left-color: #9c27b0;
+    }
+    .use-case {
+      background: #e8f5e8;
+      border: 1px solid #c8e6c9;
+      border-radius: 8px;
+      padding: 1rem;
+      margin: 0.5rem 0;
+    }
+    .use-case h4 {
+      color: #2e7d32;
+      margin: 0 0 0.5rem 0;
+    }
+  </style>
+</head>
+<body>
+
+<h1>🎵 Sonos Announcement Script Documentation</h1>
+<p>This comprehensive solution creates seamless announcements across your Sonos system in Home Assistant. The script handles the complete workflow: takes snapshots, manages speaker grouping, plays custom MP3 files, and restores everything to the original state automatically.</p>
+
+<p><strong>Perfect for:</strong> Appliance notifications, security alerts, timers, doorbell announcements, voice messages, emergency broadcasts, and any custom audio notifications throughout your home.</p>
+
+<div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 8px; padding: 1rem; margin: 1rem 0;">
+  <h3 style="color: #856404; margin-top: 0;">⚠️ Compatibility Requirement</h3>
+  <p style="color: #856404; margin-bottom: 0;"><strong>This script requires Sonos S2 compatible speakers only!</strong> The snapshot and restore functionality is only available on newer Sonos devices that support the S2 app and system. Older S1-only devices (legacy speakers from before 2019) will not work with this automation.</p>
+</div>
+
+<hr>
+
+<h2>🔄 Complete Process Overview</h2>
+<p>The script executes 13 carefully orchestrated steps to ensure perfect synchronization and restoration:</p>
+
+<div class="step-grid">
+  <div class="step-card automatic">
+    <div class="step-number">📸 Step 1 - Take Snapshot</div>
+    <p>Automatically saves current state of ALL Sonos speakers (what they're playing, volume, groups). This ensures perfect restoration after any announcement.</p>
+  </div>
+
+  <div class="step-card adjustable">
+    <div class="step-number">⏱️ Step 2 - Delay after Snapshot</div>
+    <p><strong>Adjustable:</strong> Wait time after snapshot (default: 1.5s). Increase if you experience timing issues.</p>
+  </div>
+
+  <div class="step-card automatic">
+    <div class="step-number">⏸️ Step 3 - Pause Group Members</div>
+    <p>Pauses only the selected group members (not the leader) to prevent audio conflicts during regrouping.</p>
+  </div>
+
+  <div class="step-card adjustable">
+    <div class="step-number">⏱️ Step 4 - Delay after Pause</div>
+    <p><strong>Adjustable:</strong> Wait time after pausing (default: 1s). Increase if you experience grouping issues.</p>
+  </div>
+
+  <div class="step-card automatic">
+    <div class="step-number">🔄 Step 5 - Unjoin All Speakers</div>
+    <p>Breaks all existing Sonos groups to ensure clean regrouping without conflicts.</p>
+  </div>
+
+  <div class="step-card adjustable">
+    <div class="step-number">⏱️ Step 6 - Delay after Unjoin</div>
+    <p><strong>Adjustable:</strong> Critical timing for stable grouping (default: 1.5s). Don't set below 1.0s!</p>
+  </div>
+
+  <div class="step-card automatic">
+    <div class="step-number">🔗 Step 7 - Create New Group</div>
+    <p>Groups the selected speakers with the leader as master for synchronized playback.</p>
+  </div>
+
+  <div class="step-card adjustable">
+    <div class="step-number">⏱️ Step 8 - Delay after Join</div>
+    <p><strong>Adjustable:</strong> Ensures all speakers are ready before volume changes (default: 1.5s).</p>
+  </div>
+
+  <div class="step-card adjustable">
+    <div class="step-number">🔊 Step 9 - Set Volume</div>
+    <p><strong>Adjustable:</strong> Volume for announcement (0.3 = normal, 0.5 = important alerts).</p>
+  </div>
+
+  <div class="step-card adjustable">
+    <div class="step-number">⏱️ Step 10 - Final Delay</div>
+    <p><strong>Adjustable:</strong> Final buffer before MP3 playback for perfect synchronization (default: 1s).</p>
+  </div>
+
+  <div class="step-card adjustable">
+    <div class="step-number">🎵 Step 11 - Play MP3</div>
+    <p><strong>Adjustable:</strong> MP3 file path/URL. File should be in /config/www/ folder.</p>
+  </div>
+
+  <div class="step-card adjustable">
+    <div class="step-number">⏰ Step 12 - Wait for Completion</div>
+    <p><strong>Adjustable:</strong> MP3 duration + 1 second to ensure complete playback before restore.</p>
+  </div>
+
+  <div class="step-card automatic">
+    <div class="step-number">✅ Step 13 - Ready for Restore</div>
+    <p>Announcement complete! Use the STOP script to restore original state automatically.</p>
+  </div>
+</div>
+
+<hr>
+
+<h2>🏠 Common Use Cases</h2>
+
+<div class="use-case">
+  <h4>🧺 Appliance Notifications</h4>
+  <p><strong>Washing machine, dryer, dishwasher:</strong> "Your washing machine has finished" - Perfect for knowing when cycles complete, even from other rooms.</p>
+</div>
+
+<div class="use-case">
+  <h4>🔒 Security & Safety</h4>
+  <p><strong>Door/window sensors, motion detection:</strong> "Front door opened" or "Motion detected in garage" - Immediate alerts throughout the house.</p>
+</div>
+
+<div class="use-case">
+  <h4>⏰ Timers & Reminders</h4>
+  <p><strong>Cooking timers, medication reminders:</strong> "Pizza is ready" or "Time for medicine" - Never miss important timing.</p>
+</div>
+
+<div class="use-case">
+  <h4>🔔 Doorbell & Visitors</h4>
+  <p><strong>Smart doorbell integration:</strong> "Someone is at the front door" - Hear doorbell announcements on all speakers.</p>
+</div>
+
+<div class="use-case">
+  <h4>🌡️ Environmental Alerts</h4>
+  <p><strong>Temperature, humidity, air quality:</strong> "Temperature too high in basement" - Monitor home conditions actively.</p>
+</div>
+
+<div class="use-case">
+  <h4>📱 Custom Voice Messages</h4>
+  <p><strong>Family communications:</strong> "Dinner is ready" or "School pickup in 10 minutes" - Broadcast messages to the whole house.</p>
+</div>
+
+<hr>
+
+<h2>📁 File Setup</h2>
+<details>
+  <summary>MP3 File Placement</summary>
+  <p>Place your MP3 files in the <code>/config/www/</code> directory of your Home Assistant installation.</p>
+  <pre><code>/config/www/
+├── appliances/
+│   ├── washing_machine_done.mp3
+│   ├── dryer_finished.mp3
+│   └── dishwasher_complete.mp3
+├── security/
+│   ├── door_opened.mp3
+│   ├── motion_detected.mp3
+│   └── alarm_triggered.mp3
+├── timers/
+│   ├── pizza_ready.mp3
+│   ├── medicine_time.mp3
+│   └── general_timer.mp3
+└── custom/
+    ├── dinner_ready.mp3
+    ├── bedtime_reminder.mp3
+    └── pickup_reminder.mp3</code></pre>
+  <p>Files will be accessible at: <code>http://your-ha-ip:8123/local/folder/filename.mp3</code></p>
+</details>
+
+<h2>🎛️ Configuration Tips</h2>
+<details>
+  <summary>Timing Adjustments</summary>
+  <ul>
+    <li><strong>Fast network:</strong> Reduce all delays by 0.5s for quicker announcements</li>
+    <li><strong>Slow network:</strong> Increase Step 6 (Unjoin) to 2.0s for stability</li>
+    <li><strong>Many speakers (5+):</strong> Increase Step 8 (Join) to 2.0s</li>
+    <li><strong>Grouping issues:</strong> Increase Step 4 (Pause) to 1.5s</li>
+    <li><strong>WiFi interference:</strong> Add 0.5s to all timing steps</li>
+  </ul>
+</details>
+
+<details>
+  <summary>Volume Recommendations by Use Case</summary>
+  <ul>
+    <li><strong>0.2-0.3:</strong> Normal notifications (appliances, timers)</li>
+    <li><strong>0.4-0.5:</strong> Important alerts (security, reminders)</li>
+    <li><strong>0.6-0.7:</strong> Urgent announcements (emergencies, critical alerts)</li>
+    <li><strong>0.1-0.2:</strong> Quiet hours (early morning, late evening)</li>
+  </ul>
+</details>
+
+<details>
+  <summary>Creating Custom MP3 Announcements</summary>
+  <p>Generate professional-quality announcements:</p>
+  <ul>
+    <li><strong>Text-to-Speech Services:</strong>
+      <ul>
+        <li><a href="https://fliki.ai/voices" target="_blank">Fliki.ai</a> - High-quality voices, multiple languages</li>
+        <li>Google Text-to-Speech - Free, good quality</li>
+        <li>Amazon Polly - Professional voices</li>
+      </ul>
+    </li>
+    <li><strong>Recording Tips:</strong>
+      <ul>
+        <li>Keep announcements under 10 seconds for best results</li>
+        <li>Use clear, professional voices</li>
+        <li>Save as MP3 format (128kbps or higher)</li>
+        <li>Test volume levels before final use</li>
+      </ul>
+    </li>
+    <li><strong>File Naming:</strong>
+      <ul>
+        <li>Use descriptive names: <code>washing_machine_done.mp3</code></li>
+        <li>Group by category in folders</li>
+        <li>Avoid spaces, use underscores or hyphens</li>
+      </ul>
+    </li>
+  </ul>
+</details>
+
+<hr>
+
+<h2>🔧 Usage Examples</h2>
+<details>
+  <summary>Basic Appliance Automation (Washing Machine Example)</summary>
+  <pre><code>alias: Washing Machine Finished Announcement
+triggers:
+  - entity_id: sensor.washing_machine_power
+    below: 3
+    for: "00:00:15"
+    trigger: numeric_state
+conditions:
+  - condition: time
+    after: "07:00:00"
+    before: "22:00:00"
+actions:
+  - action: script.sonos_announcement_start
+    data: {}
+  - action: script.sonos_announcement_stop
+    data: {}</code></pre>
+</details>
+
+<details>
+  <summary>Security Alert with Conditions</summary>
+  <pre><code>alias: Motion Detection Alert
+triggers:
+  - entity_id: binary_sensor.garage_motion
+    to: "on"
+    trigger: state
+conditions:
+  - condition: state
+    entity_id: alarm_control_panel.home_alarm
+    state: armed_away
+  - condition: time
+    after: "22:00:00"
+    before: "06:00:00"
+actions:
+  - action: script.sonos_announcement_start
+    data: {}
+  - action: script.sonos_announcement_stop
+    data: {}</code></pre>
+</details>
+
+<details>
+  <summary>Timer-Based Announcement</summary>
+  <pre><code>alias: Dinner Timer Alert
+triggers:
+  - entity_id: timer.dinner_timer
+    to: idle
+    trigger: state
+actions:
+  - action: script.sonos_announcement_start
+    data: {}
+  - action: script.sonos_announcement_stop
+    data: {}</code></pre>
+</details>
+
+<details>
+  <summary>Multiple Condition Example</summary>
+  <pre><code>alias: Smart Doorbell Announcement
+triggers:
+  - entity_id: binary_sensor.front_door_button
+    to: "on"
+    trigger: state
+conditions:
+  - condition: or
+    conditions:
+      - condition: state
+        entity_id: person.family_member
+        state: home
+      - condition: time
+        after: "08:00:00"
+        before: "20:00:00"
+actions:
+  - action: script.sonos_announcement_start
+    data: {}
+  - action: script.sonos_announcement_stop
+    data: {}</code></pre>
+</details>
+
+<hr>
+
+<h2>🚨 Troubleshooting</h2>
+<details>
+  <summary>Common Issues & Solutions</summary>
+  <ul>
+    <li><strong>Speakers don't group properly:</strong> Increase Step 6 delay to 2.0s</li>
+    <li><strong>Volume doesn't change:</strong> Increase Step 8 delay to 2.0s</li>
+    <li><strong>MP3 cuts off early:</strong> Increase Step 12 duration</li>
+    <li><strong>Original music doesn't restore:</strong> Verify STOP script runs after START</li>
+    <li><strong>Some speakers missing:</strong> Check Sonos integration - all devices discovered?</li>
+    <li><strong>Announcements overlap:</strong> Add delays between automation triggers</li>
+    <li><strong>Poor audio quality:</strong> Use higher bitrate MP3 files (192kbps+)</li>
+    <li><strong>Snapshot/restore not working:</strong> Verify all speakers are S2 compatible - S1 legacy devices don't support this feature</li>
+    <li><strong>Script fails completely:</strong> Check Home Assistant logs for "S1 device" errors - remove incompatible speakers from integration</li>
+  </ul>
+</details>
+
+<details>
+  <summary>Performance Optimization</summary>
+  <ul>
+    <li><strong>Network optimization:</strong> Use wired connection for main Sonos speaker</li>
+    <li><strong>File size:</strong> Keep MP3 files under 1MB for faster loading</li>
+    <li><strong>Timing tweaks:</strong> Adjust delays based on your network speed</li>
+    <li><strong>Speaker placement:</strong> Ensure strong WiFi signal to all Sonos devices</li>
+  </ul>
+</details>
+
+<hr>
+
+<h2>📋 Requirements</h2>
+<ul>
+  <li><strong>Sonos S2 compatible speakers ONLY</strong> - Legacy S1 devices do not support snapshot/restore</li>
+  <li><strong>Home Assistant</strong> with Sonos integration properly configured</li>
+  <li><strong>All Sonos speakers</strong> discovered and responsive in Home Assistant</li>
+  <li><strong>MP3 files</strong> placed in /config/www/ directory structure</li>
+  <li><strong>Both scripts</strong> configured: START (this one) and STOP script</li>
+  <li><strong>Stable network</strong> connection between HA and Sonos devices</li>
+</ul>
+
+<details>
+  <summary>Sonos S2 Compatibility Check</summary>
+  <p><strong>How to verify your speakers are S2 compatible:</strong></p>
+  <ul>
+    <li><strong>Check the Sonos app:</strong> If you're using the white Sonos S2 app (not the black S1 app), your speakers are compatible</li>
+    <li><strong>Speaker models that support S2:</strong>
+      <ul>
+        <li>All speakers released 2019 or later</li>
+        <li>Play:5 (Gen 2), Playbar, Playbase, One, One SL</li>
+        <li>Arc, Beam, Move, Roam, Ray, Sub (Gen 3), Port, Amp</li>
+        <li>IKEA Symfonisk speakers</li>
+      </ul>
+    </li>
+    <li><strong>Legacy S1-only speakers (NOT compatible):</strong>
+      <ul>
+        <li>Play:5 (Gen 1), Play:3, Play:1, Connect, Connect:Amp</li>
+        <li>Sub (Gen 1 & 2), Boost, Bridge</li>
+      </ul>
+    </li>
+    <li><strong>Mixed systems:</strong> If you have both S1 and S2 speakers, only the S2 speakers will work with this script</li>
+  </ul>
+</details>
+
+<hr>
+
+<h2>🎯 Next Steps</h2>
+<ol>
+  <li><strong>Configure the script</strong> with your Sonos speakers and MP3 files</li>
+  <li><strong>Test manually</strong> to ensure proper operation</li>
+  <li><strong>Create automations</strong> for your specific use cases</li>
+  <li><strong>Fine-tune timing</strong> based on your network performance</li>
+  <li><strong>Expand</strong> with additional MP3 files and scenarios</li>
+</ol>
+
+<p><em>Transform your Home Assistant into a comprehensive announcement system that keeps your entire household informed and connected!</em></p>
+
+</body>
+</html>

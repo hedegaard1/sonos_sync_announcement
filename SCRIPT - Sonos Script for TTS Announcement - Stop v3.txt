@@ -1,0 +1,9 @@
+alias: Sonos Script for TTS Announcement - Stop v3
+sequence:
+  - action: sonos.restore
+    data:
+      entity_id: >
+        {{ expand(integration_entities('sonos')) | selectattr('domain',
+        'equalto', 'media_player') | map(attribute='entity_id') | list }}
+mode: single
+description: Restores all Sonos devices to their previous state after TTS announcement

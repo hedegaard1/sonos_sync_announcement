@@ -1,0 +1,39 @@
+alias: >-
+  Bryggers - Washing Machine Finished Announcement with Synced MP3 via Sonos
+  Grouping
+description: >-
+  Automatically announces when washing machine cycle completes using Sonos
+  speakers throughout the house.  Triggers when power drops below 3W for 15
+  seconds, plays synchronized MP3 announcement, then restores  original music
+  and grouping. Only active during reasonable hours (9 AM - 11 PM).  For
+  detailed configuration and troubleshooting:
+  http://192.168.10.60:8123/local/documentation/sonos_announcement_guide.html
+triggers:
+  - entity_id: sensor.bryggers_vaskemaskine_power
+    below: 3
+    for: "00:00:15"
+    trigger: numeric_state
+conditions:
+  - condition: or
+    conditions:
+      - condition: time
+        after: "09:00:00"
+        before: "23:00:00"
+        weekday:
+          - mon
+          - tue
+          - wed
+          - thu
+          - sun
+      - condition: time
+        after: "09:00:00"
+        before: "23:00:00"
+        weekday:
+          - fri
+          - sat
+actions:
+  - action: script.sonos_prepare_group_for_tts_with_gui
+    data: {}
+  - action: script.sonos_restore_group_and_playback_after_tts
+    data: {}
+mode: single
