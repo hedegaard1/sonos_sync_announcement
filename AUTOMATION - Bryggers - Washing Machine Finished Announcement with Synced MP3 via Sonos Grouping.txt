@@ -32,8 +32,8 @@ conditions:
           - fri
           - sat
 actions:
-  - action: script.sonos_prepare_group_for_tts_with_gui
+  - action: script.Sonos Script for TTS Announcement - Stop v3
     data: {}
-  - action: script.sonos_restore_group_and_playback_after_tts
+  - action: script.Sonos Script for TTS Announcement - Start v3
     data: {}
 mode: single
